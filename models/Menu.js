@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 
 const mealSchema = new mongoose.Schema({
   name: String,
-  weight: String,
-  price: Number,
+  optional: Boolean,
 });
 
 const daySchema = new mongoose.Schema({
@@ -21,8 +20,6 @@ const weeklyMenuSchema = new mongoose.Schema(
     weekEnd: { type: Date, required: true },
     orderDeadline: { type: Date, required: true },
     days: { type: [daySchema], default: [] },
-    menuFile: { type: String, default: "" },
-    menuFileName: { type: String, default: "" },
   },
   { timestamps: true },
 );
