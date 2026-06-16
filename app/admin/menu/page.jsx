@@ -21,6 +21,7 @@ import {
   formatDate,
 } from "@/lib/helpers";
 import { uuid } from "@/lib/uuid";
+import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 
 const DAYS = ["Понеделник", "Вторник", "Сряда", "Четвъртък", "Петък"];
 
@@ -30,6 +31,7 @@ const AdminPage = () => {
   const [submiting, setSubmiting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(null);
+  const [user, setUser] = useState(null)
 
   const router = useRouter();
 
@@ -44,6 +46,7 @@ const AdminPage = () => {
     const init = async () => {
       try {
         const userRes = await axios.get("/api/auth/user");
+        setUser(userRes.data);
 
         if (userRes.data.role !== "admin") {
           router.push("/dashboard");
@@ -218,6 +221,7 @@ const AdminPage = () => {
 
   return (
     <div className="min-h-screen">
+     <SidebarNav user={user} />
       <main
         style={{ paddingLeft: "var(--sidebar-width, 16rem)" }}
         className="transition-all duration-300"
@@ -417,17 +421,16 @@ const AdminPage = () => {
                     />
                   </div>
 
-                  <input
-                    type="datetime-local"
-                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:border-[#478BAF] focus:ring-2 focus:ring-[#478BAF]"
-                    value={editForm.orderDeadline}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        orderDeadline: e.target.value,
-                      })
-                    }
-                  />
+<input
+  type="datetime-local"
+  required
+  step="3600"
+  className="w-full rounded-lg px-3 py-2 focus:outline-none border-none bg-transparent"
+  value={form.orderDeadline}
+  onChange={(e) =>
+    setForm({ ...form, orderDeadline: e.target.value })
+  }
+/>
 
                   <div className="space-y-4">
                     {editForm.days.map((day, dayIndex) => (

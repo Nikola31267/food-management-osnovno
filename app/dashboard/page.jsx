@@ -249,7 +249,7 @@ export default function Dashboard() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 {user?.role === "admin" && (
                   <Link
-                    href="/admin"
+                    href="/admin/menu"
                     className="text-sm sm:text-base hover:underline hover:text-[#387fa5] transition-colors duration-200"
                   >
                     Admin
