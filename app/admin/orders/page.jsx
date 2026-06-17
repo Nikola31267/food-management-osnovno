@@ -495,13 +495,7 @@ const AdminOrdersPage = () => {
 
           {ordersData.length !== 0 && (
             <div className="flex gap-2">
-              <ShinyButton
-                onClick={downloadFoodByClassCSV}
-                href="/"
-                className="p-2 mb-2 mt-2"
-              >
-                Изтегли поръчките (по клас)
-              </ShinyButton>
+             
               <ShinyButton
                 onClick={downloadMenuWithCountsCSV}
                 href="/"
@@ -509,13 +503,7 @@ const AdminOrdersPage = () => {
               >
                 Изтегли фактура за Бешамел
               </ShinyButton>
-              <ShinyButton
-                onClick={downloadOrders}
-                href="/"
-                className="p-2 mb-2 mt-2"
-              >
-                Изтегли поръчките за седмицата
-              </ShinyButton>
+            
             </div>
           )}
 

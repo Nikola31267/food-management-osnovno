@@ -83,9 +83,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user || !menu?._id) return;
 
-    const userOrderForMenu = user.orders?.find(
-      (o) => o.menuId?.toString() === menu._id?.toString(),
-    );
+    const userOrderForMenu = user.orders?.find((o) => o.menuId === menu._id);
 
     if (userOrderForMenu) {
       setHasOrdered(true);
@@ -200,115 +198,56 @@ export default function Dashboard() {
     [hasOrdered, menuExpired],
   );
 
-  const buildCompletedWeeklyOrder = () => {
-    const completedWeeklyOrder = {};
-
-    menu.days.forEach((dayMenu) => {
-      const selectedMeals = weeklyOrder[dayMenu.day] || [];
-
-      if (selectedMeals.length === 0) return;
-
-      const requiredMeals = dayMenu.meals
-        .filter((meal) => meal.required === true || !meal.optional)
-        .map((meal) => ({
-          mealId: meal._id,
-          name: meal.name,
-          price: meal.price,
-          quantity: 1,
-          optional: false,
-        }));
-
-      const selectedOrderMeals = selectedMeals.map((meal) => ({
-        mealId: meal.mealId,
-        name: meal.name,
-        price: meal.price,
-        quantity: meal.quantity,
-        optional: Boolean(meal.optional),
-      }));
-
-      const mergedMeals = [...requiredMeals, ...selectedOrderMeals];
-
-      completedWeeklyOrder[dayMenu.day] = mergedMeals.reduce((acc, meal) => {
-        const existingMeal = acc.find(
-          (m) => m.mealId?.toString() === meal.mealId?.toString(),
-        );
-
-        if (existingMeal) {
-          existingMeal.quantity = Math.max(
-            existingMeal.quantity,
-            meal.quantity,
-          );
-        } else {
-          acc.push(meal);
-        }
-
-        return acc;
-      }, []);
-    });
-
-    return completedWeeklyOrder;
-  };
 
   const submitWeeklyOrder = async () => {
-    if (hasOrdered || menuExpired) return;
+  if (hasOrdered || menuExpired) return;
 
-    if (!menu?.days?.length) {
-      return toast.error("Няма активно меню.");
-    }
+  if (!Object.keys(weeklyOrder).length) {
+    return toast.info("Няма избрани ястия.");
+  }
 
-    if (!Object.keys(weeklyOrder).length) {
-      return toast.info("Няма избрани ястия.");
-    }
+  setSubmiting(true);
 
-    setSubmiting(true);
+  try {
+    const orderDays = Object.entries(weeklyOrder).map(([day, meals]) => ({
+      day,
+      meals: meals.map((m) => ({
+        mealId: m.mealId,
+        mealName: m.name,
+        quantity: m.quantity,
+        price: m.price,
+        optional: Boolean(m.optional),
+      })),
+    }));
 
-    try {
-      const completedWeeklyOrder = buildCompletedWeeklyOrder();
+    const orderPayload = {
+      menuId: menu._id,
+      days: orderDays,
+      weeklyOrder,
+      totalPrice,
+    };
 
-      const finalTotalPrice = Object.values(completedWeeklyOrder)
-        .flat()
-        .reduce((sum, meal) => sum + meal.price * meal.quantity, 0);
+    await axios.post("/api/order", orderPayload);
 
-      const orderDays = Object.entries(completedWeeklyOrder).map(
-        ([day, meals]) => ({
-          day,
-          meals: meals.map((meal) => ({
-            mealId: meal.mealId,
-            mealName: meal.name,
-            quantity: meal.quantity,
-            price: meal.price,
-            optional: Boolean(meal.optional),
-          })),
-        }),
-      );
+    const newSavedOrder = {
+      menuId: menu._id,
+      days: orderDays,
+      totalPrice,
+      paid: false,
+    };
 
-      const orderPayload = {
-        menuId: menu._id,
-        weeklyOrder: completedWeeklyOrder,
-        totalPrice: finalTotalPrice,
-      };
-
-      await axios.post("/api/order", orderPayload);
-
-      const newSavedOrder = {
-        menuId: menu._id,
-        days: orderDays,
-        totalPrice: finalTotalPrice,
-        paid: false,
-      };
-
-      setSavedOrder(newSavedOrder);
-      setHasOrdered(true);
-      setWeeklyOrder({});
-      toast.success("Поръчката е изпратена!");
-    } catch (err) {
-      const message = err.response?.data?.error || "Failed to submit order";
-      toast.error(message);
-    } finally {
-      setSubmiting(false);
-    }
-  };
-
+    setSavedOrder(newSavedOrder);
+    setHasOrdered(true);
+    setWeeklyOrder({});
+    toast.success("Поръчката е изпратена!");
+  } catch (err) {
+    const message = err.response?.data?.error || "Failed to submit order";
+    toast.error(message);
+  } finally {
+    setSubmiting(false);
+  }
+};
+  
   const filteredDays = useMemo(() => {
     if (!menu?.days) return [];
     return activeDay ? menu.days.filter((d) => d.day === activeDay) : menu.days;
