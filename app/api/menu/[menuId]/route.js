@@ -6,6 +6,17 @@ import WeeklyMenu from "@/models/Menu";
 import { Parser } from "json2csv";
 import mongoose from "mongoose";
 
+const normalizeOptional = (meal) => {
+  return (
+    meal?.optional === true ||
+    meal?.optional === "true" ||
+    meal?.optional === 1 ||
+    meal?.optional === "1" ||
+    meal?.optional === "optional" ||
+    meal?.type === "optional"
+  );
+};
+
 export async function DELETE(req, { params }) {
   await connectDB();
 
@@ -186,6 +197,11 @@ export async function PUT(req, { params }) {
         .filter((m) => String(m?.name || "").trim())
         .map((m) => ({
           name: String(m.name || "").trim(),
+
+          // Important: keep optional when editing
+          optional: normalizeOptional(m),
+
+          // Keep these only if your schema supports them
           weight: String(m.weight || "").trim(),
           price:
             m.price === "" || m.price == null

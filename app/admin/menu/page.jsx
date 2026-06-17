@@ -31,7 +31,7 @@ const AdminPage = () => {
   const [submiting, setSubmiting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState(null);
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null);
 
   const router = useRouter();
 
@@ -39,8 +39,19 @@ const AdminPage = () => {
     weekStart: "",
     weekEnd: "",
     orderDeadline: "",
-    days: DAYS.map((d) => ({ day: d, meals: [] })), // ✅ fixed: was `meals` (undefined)
+    days: DAYS.map((d) => ({ day: d, meals: [] })),
   });
+
+  const normalizeOptional = (meal) => {
+    return (
+      meal.optional === true ||
+      meal.optional === "true" ||
+      meal.optional === 1 ||
+      meal.optional === "1" ||
+      meal.optional === "optional" ||
+      meal.type === "optional"
+    );
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -93,12 +104,13 @@ const AdminPage = () => {
           .filter((m) => String(m.name || "").trim())
           .map((m) => ({
             name: String(m.name || "").trim(),
-            optional: Boolean(m.optional),
+            optional: normalizeOptional(m),
           })),
       })),
     };
 
     setSubmiting(true);
+
     try {
       await axios.post("/api/menu", payload);
 
@@ -121,6 +133,7 @@ const AdminPage = () => {
 
   const startEditing = () => {
     const copy = JSON.parse(JSON.stringify(weeklyMenu));
+
     copy.weekStart = formatDateForInput(copy.weekStart);
     copy.weekEnd = formatDateForInput(copy.weekEnd);
     copy.orderDeadline = formatDateTimeForInput(copy.orderDeadline);
@@ -130,7 +143,7 @@ const AdminPage = () => {
       meals: (d.meals || []).map((m) => ({
         ...m,
         id: m.id || uuid(),
-        optional: Boolean(m.optional),
+        optional: normalizeOptional(m),
       })),
     }));
 
@@ -157,8 +170,9 @@ const AdminPage = () => {
           meals: (d.meals || [])
             .filter((m) => String(m.name || "").trim())
             .map((m) => ({
+              id: m.id,
               name: String(m.name || "").trim(),
-              optional: Boolean(m.optional),
+              optional: normalizeOptional(m),
             })),
         })),
       };
@@ -221,7 +235,8 @@ const AdminPage = () => {
 
   return (
     <div className="min-h-screen">
-     <SidebarNav user={user} />
+      <SidebarNav user={user} />
+
       <main
         style={{ paddingLeft: "var(--sidebar-width, 16rem)" }}
         className="transition-all duration-300"
@@ -281,6 +296,7 @@ const AdminPage = () => {
                 <div key={day.day} className="rounded-xl border p-4">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold">{day.day}</h3>
+
                     <Button
                       variant="outline"
                       onClick={() =>
@@ -322,7 +338,7 @@ const AdminPage = () => {
                         <label className="flex items-center gap-2 rounded-lg border px-3 py-2">
                           <input
                             type="checkbox"
-                            checked={Boolean(meal.optional)}
+                            checked={normalizeOptional(meal)}
                             onChange={(e) =>
                               setForm((prev) => ({
                                 ...prev,
@@ -376,6 +392,7 @@ const AdminPage = () => {
             <div className="rounded-xl border bg-white p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="text-xl font-semibold">Сегашно меню</h2>
+
                 <div className="flex gap-2">
                   {!isEditing && (
                     <Button
@@ -386,6 +403,7 @@ const AdminPage = () => {
                       ✏️ Редактирай
                     </Button>
                   )}
+
                   <Button
                     variant="destructive"
                     disabled={submiting}
@@ -400,7 +418,7 @@ const AdminPage = () => {
                 </div>
               </div>
 
-              {isEditing ? (
+              {isEditing && editForm ? (
                 <>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <input
@@ -408,29 +426,39 @@ const AdminPage = () => {
                       className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:border-[#478BAF] focus:ring-2 focus:ring-[#478BAF]"
                       value={editForm.weekStart}
                       onChange={(e) =>
-                        setEditForm({ ...editForm, weekStart: e.target.value })
+                        setEditForm({
+                          ...editForm,
+                          weekStart: e.target.value,
+                        })
                       }
                     />
+
                     <input
                       type="date"
                       className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:border-[#478BAF] focus:ring-2 focus:ring-[#478BAF]"
                       value={editForm.weekEnd}
                       onChange={(e) =>
-                        setEditForm({ ...editForm, weekEnd: e.target.value })
+                        setEditForm({
+                          ...editForm,
+                          weekEnd: e.target.value,
+                        })
                       }
                     />
                   </div>
 
-<input
-  type="datetime-local"
-  required
-  step="3600"
-  className="w-full rounded-lg px-3 py-2 focus:outline-none border-none bg-transparent"
-  value={form.orderDeadline}
-  onChange={(e) =>
-    setForm({ ...form, orderDeadline: e.target.value })
-  }
-/>
+                  <input
+                    type="datetime-local"
+                    required
+                    step="3600"
+                    className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:border-[#478BAF] focus:ring-2 focus:ring-[#478BAF]"
+                    value={editForm.orderDeadline}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        orderDeadline: e.target.value,
+                      })
+                    }
+                  />
 
                   <div className="space-y-4">
                     {editForm.days.map((day, dayIndex) => (
@@ -475,7 +503,7 @@ const AdminPage = () => {
                               <label className="flex items-center gap-2 rounded-lg border px-3 py-2">
                                 <input
                                   type="checkbox"
-                                  checked={Boolean(meal.optional)}
+                                  checked={normalizeOptional(meal)}
                                   onChange={(e) =>
                                     setEditForm((prev) =>
                                       handleEditMealChange(
@@ -510,14 +538,23 @@ const AdminPage = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-4">
-                    <ShinyButton href="#" onClick={saveEdits}>
+                    <ShinyButton
+                      href="#"
+                      disabled={submiting}
+                      onClick={saveEdits}
+                    >
                       {submiting ? (
                         <Loader2 className="animate-spin" />
                       ) : (
                         <span>Запази промените</span>
                       )}
                     </ShinyButton>
-                    <Button variant="outline" onClick={cancelEditing}>
+
+                    <Button
+                      variant="outline"
+                      disabled={submiting}
+                      onClick={cancelEditing}
+                    >
                       Откажи
                     </Button>
                   </div>
