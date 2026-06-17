@@ -34,12 +34,12 @@ export async function POST(req) {
       );
     }
 
-    if (!email.startsWith("ot.")) {
-      return NextResponse.json(
-        { message: "Only emails starting with ot. are allowed" },
-        { status: 403 },
-      );
-    }
+    // if (!email.startsWith("ot.")) {
+    //   return NextResponse.json(
+    //     { message: "Only emails starting with ot. are allowed" },
+    //     { status: 403 },
+    //   );
+    // }
 
 
     let user = await User.findOne({ email });
