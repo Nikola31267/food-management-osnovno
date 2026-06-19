@@ -41,26 +41,6 @@ const SignInCard = ({ handleGoogleLoginSuccess, handleGoogleLoginFailure }) => {
             </div>
           </GoogleOAuthProvider>
         </div>
-
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            С вашата регистрация се съгласявате с нашите{" "}
-            <Link
-              href="/terms-of-service"
-              className="p-0 h-auto text-xs text-[#478BAF] hover:underline"
-            >
-              Terms of Service
-            </Link>{" "}
-            и{" "}
-            <Link
-              href="/privacy-policy"
-              variant="link"
-              className="p-0 h-auto text-xs text-[#478BAF] hover:underline"
-            >
-              Privacy Policy
-            </Link>
-          </p>
-        </div>
       </CardContent>
     </Card>
   );

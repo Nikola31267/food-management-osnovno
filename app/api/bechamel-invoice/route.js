@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 
-import {connectDB} from "@/lib/connectDB";
+import { connectDB } from "@/lib/connectDB";
 import User from "@/models/User";
 
 const DAYS = [
@@ -49,6 +49,20 @@ function detectDay(value) {
   }
 
   return DAY_ALIASES[text] || null;
+}
+
+function getGradeNumber(grade) {
+  const match = String(grade || "").match(/\d+/);
+  return match ? Number(match[0]) : null;
+}
+
+function getGradeGroup(grade) {
+  const gradeNumber = getGradeNumber(grade);
+
+  if (gradeNumber >= 1 && gradeNumber <= 4) return "grades1to4";
+  if (gradeNumber >= 5 && gradeNumber <= 7) return "grades5to7";
+
+  return "unknown";
 }
 
 function parseCSV(text) {
@@ -197,6 +211,8 @@ async function getTotalsByDay() {
   const totals = Object.fromEntries(DAYS.map((day) => [day, {}]));
 
   for (const user of users) {
+    const gradeGroup = getGradeGroup(user.grade);
+
     for (const week of user.orders || []) {
       for (const day of week.days || []) {
         const dayKey = detectDay(day.day);
@@ -213,10 +229,14 @@ async function getTotalsByDay() {
             totals[dayKey][normalizedMealName] = {
               name: mealName,
               count: 0,
+              grades1to4: 0,
+              grades5to7: 0,
+              unknown: 0,
             };
           }
 
           totals[dayKey][normalizedMealName].count += quantity;
+          totals[dayKey][normalizedMealName][gradeGroup] += quantity;
         }
       }
     }
@@ -231,7 +251,7 @@ function buildMealRows(dayTotals) {
   );
 
   if (meals.length === 0) {
-    return [["", "", "Няма поръчки", "0", ""]];
+    return [["", "", "Няма поръчки", "0", "0", "0"]];
   }
 
   return meals.map((meal) => [
@@ -239,7 +259,8 @@ function buildMealRows(dayTotals) {
     "",
     meal.name,
     String(meal.count),
-    "",
+    String(meal.grades1to4),
+    String(meal.grades5to7),
   ]);
 }
 
