@@ -53,6 +53,15 @@ const AdminPage = () => {
     );
   };
 
+  const normalizeMealOne = (meal) => {
+    return (
+      meal.meal_one === true ||
+      meal.meal_one === "true" ||
+      meal.meal_one === 1 ||
+      meal.meal_one === "1"
+    );
+  };
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -105,6 +114,7 @@ const AdminPage = () => {
           .map((m) => ({
             name: String(m.name || "").trim(),
             optional: normalizeOptional(m),
+            meal_one: normalizeMealOne(m),
           })),
       })),
     };
@@ -144,6 +154,7 @@ const AdminPage = () => {
         ...m,
         id: m.id || uuid(),
         optional: normalizeOptional(m),
+        meal_one: normalizeMealOne(m),
       })),
     }));
 
@@ -173,6 +184,7 @@ const AdminPage = () => {
               id: m.id,
               name: String(m.name || "").trim(),
               optional: normalizeOptional(m),
+              meal_one: normalizeMealOne(m),
             })),
         })),
       };
@@ -315,7 +327,7 @@ const AdminPage = () => {
                     {day.meals.map((meal) => (
                       <div
                         key={meal.id}
-                        className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px_auto] sm:items-center"
+                        className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px_140px_auto] sm:items-center"
                       >
                         <input
                           className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:border-[#478BAF] focus:ring-2 focus:ring-[#478BAF]"
@@ -353,6 +365,26 @@ const AdminPage = () => {
                             }
                           />
                           <span>Optional</span>
+                        </label>
+
+                        <label className="flex items-center gap-2 rounded-lg border px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={normalizeMealOne(meal)}
+                            onChange={(e) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                days: handleMealChange(
+                                  prev.days,
+                                  dayIndex,
+                                  meal.id,
+                                  "meal_one",
+                                  e.target.checked,
+                                ),
+                              }))
+                            }
+                          />
+                          <span>Meal 1</span>
                         </label>
 
                         <Button
@@ -481,7 +513,7 @@ const AdminPage = () => {
                           {day.meals.map((meal) => (
                             <div
                               key={meal.id}
-                              className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px_auto] sm:items-center"
+                              className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px_140px_auto] sm:items-center"
                             >
                               <input
                                 className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:border-[#478BAF] focus:ring-2 focus:ring-[#478BAF]"
@@ -517,6 +549,25 @@ const AdminPage = () => {
                                   }
                                 />
                                 <span>Избираемо</span>
+                              </label>
+
+                              <label className="flex items-center gap-2 rounded-lg border px-3 py-2">
+                                <input
+                                  type="checkbox"
+                                  checked={normalizeMealOne(meal)}
+                                  onChange={(e) =>
+                                    setEditForm((prev) =>
+                                      handleEditMealChange(
+                                        prev,
+                                        dayIndex,
+                                        meal.id,
+                                        "meal_one",
+                                        e.target.checked,
+                                      ),
+                                    )
+                                  }
+                                />
+                                <span>Meal 1</span>
                               </label>
 
                               <Button

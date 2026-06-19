@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   await connectDB();
+
   try {
-    const decoded = await verifyToken(req); // ← await added
+    const decoded = await verifyToken(req);
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -17,11 +18,13 @@ export async function POST(req) {
     }
 
     if (user.role !== "admin") {
-      return NextResponse.json({ message: "You are not admin" }, { status: 403 });
+      return NextResponse.json(
+        { message: "You are not admin" },
+        { status: 403 },
+      );
     }
 
-    const { weekStart, weekEnd, days, orderDeadline } =
-      await req.json();
+    const { weekStart, weekEnd, days, orderDeadline } = await req.json();
 
     if (!orderDeadline) {
       return NextResponse.json(
@@ -31,6 +34,7 @@ export async function POST(req) {
     }
 
     const deadlineDate = new Date(orderDeadline);
+
     if (isNaN(deadlineDate.getTime())) {
       return NextResponse.json(
         { message: "Invalid order deadline" },
@@ -54,6 +58,7 @@ export async function POST(req) {
 
 export async function GET() {
   await connectDB();
+
   try {
     const menu = await WeeklyMenu.findOne().sort({ createdAt: -1 }).lean();
     return NextResponse.json(menu);
@@ -61,4 +66,3 @@ export async function GET() {
     return NextResponse.json({ message: err.message }, { status: 500 });
   }
 }
-

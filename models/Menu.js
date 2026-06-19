@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const mealSchema = new mongoose.Schema({
   name: String,
   optional: Boolean,
+  meal_one: Boolean,
 });
 
 const daySchema = new mongoose.Schema({
@@ -28,4 +29,3 @@ const WeeklyMenu =
   mongoose.models.WeeklyMenu || mongoose.model("WeeklyMenu", weeklyMenuSchema);
 
 export default WeeklyMenu;
-

@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import Loader from "@/components/layout/Loader";
 import { useRouter } from "next/navigation";
-import { ShinyButton } from "@/components/ui/shiny-button";
-import { Loader2, Trash } from "lucide-react";
+import { Loader2, Trash, Download } from "lucide-react";
 import { toast } from "react-toastify";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import axios from "axios";
@@ -13,18 +12,31 @@ const AdminOrdersPage = () => {
   const [ordersData, setOrdersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [user, setUser] = useState("");
   const [submiting, setSubmiting] = useState(false);
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedPaid, setSelectedPaid] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [menuId, setMenuId] = useState(null);
 
   const ordersPerPage = 5;
   const router = useRouter();
+
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get("/api/orders");
+      setOrdersData(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch orders");
+    }
+  };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -56,7 +68,11 @@ const AdminOrdersPage = () => {
     const init = async () => {
       setLoading(true);
 
-      await Promise.all([fetchUserProfile(), fetchMenu(), fetchOrders()]);
+      await Promise.all([
+        fetchUserProfile(),
+        fetchMenu(),
+        fetchOrders(),
+      ]);
 
       setLoading(false);
     };
@@ -68,21 +84,30 @@ const AdminOrdersPage = () => {
     setCurrentPage(1);
   }, [searchTerm, selectedClass, selectedPaid, selectedRole]);
 
-  const fetchOrders = async () => {
-    try {
-      const res = await axios.get("/api/orders");
-      setOrdersData(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to fetch orders");
-    }
-  };
-
   const downloadMenuWithCountsCSV = async () => {
+    const expectedPeopleInput = prompt(
+      "Колко хора е трябвало да поръчат? Остави празно за автоматично броене.",
+    );
+
+    const expectedPeople = expectedPeopleInput
+      ? Number(expectedPeopleInput)
+      : null;
+
+    if (
+      expectedPeopleInput &&
+      (Number.isNaN(expectedPeople) || expectedPeople < 0)
+    ) {
+      toast.error("Моля въведете валиден брой хора.");
+      return;
+    }
+
     setDownloadingInvoice(true);
 
     try {
-      const res = await axios.get("/api/bechamel-invoice", {
+      const query =
+        expectedPeople !== null ? `?expectedPeople=${expectedPeople}` : "";
+
+      const res = await axios.get(`/api/bechamel-invoice${query}`, {
         responseType: "blob",
       });
 
@@ -181,7 +206,7 @@ const AdminOrdersPage = () => {
   if (loading) return <Loader />;
 
   return (
-    <div className="min-h-screen">
+    <div>
       <SidebarNav user={user} />
 
       <main
@@ -189,7 +214,27 @@ const AdminOrdersPage = () => {
         className="transition-all duration-300"
       >
         <div className="p-8 min-h-screen bg-gray-50">
-          <h1 className="text-3xl font-bold mb-6">Поръчки</h1>
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h1 className="text-3xl font-bold">Поръчки</h1>
+
+            <button
+              onClick={downloadMenuWithCountsCSV}
+              disabled={downloadingInvoice}
+              className="flex items-center gap-2 px-4 py-2 bg-[#478BAF] text-white rounded-lg hover:bg-[#367091] transition-colors duration-300 disabled:opacity-50"
+            >
+              {downloadingInvoice ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Сваляне...
+                </>
+              ) : (
+                <>
+                  <Download size={18} />
+                  Свали фактура за Бешамел
+                </>
+              )}
+            </button>
+          </div>
 
           <div className="flex flex-row items-center justify-center gap-2 mb-4">
             <input
@@ -224,39 +269,28 @@ const AdminOrdersPage = () => {
                 <option value="student">Ученик</option>
                 <option value="teacher">Учител</option>
               </select>
+
+              <select
+                value={selectedPaid}
+                onChange={(e) => setSelectedPaid(e.target.value)}
+                className="p-3 border rounded-full outline-none focus:ring-2 focus:ring-[#478BAF] focus:border-[#478BAF]"
+              >
+                <option value="">Всички плащания</option>
+                <option value="paid">Платени</option>
+                <option value="unpaid">Неплатени</option>
+              </select>
             </div>
           </div>
 
-{ordersData.length !== 0 && (
-  <div className="flex gap-2 mb-4">
-    <ShinyButton
-      href="#"
-      onClick={(e) => {
-        e.preventDefault();
-        downloadMenuWithCountsCSV();
-      }}
-      disabled={downloadingInvoice}
-      className="p-2 mb-2 mt-2 disabled:opacity-50"
-    >
-      {downloadingInvoice ? (
-        <span className="flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Изтегляне...
-        </span>
-      ) : (
-        "Изтегли фактура за Бешамел"
-      )}
-    </ShinyButton>
-  </div>
-)}
-
           {error && <p className="text-red-500 mb-4">{error}</p>}
 
-          {filteredOrders.length === 0 ? (
+          {ordersData.length === 0 ? (
+            <p>Няма поръчки.</p>
+          ) : filteredOrders.length === 0 ? (
             <p>Няма намерени ученици.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse border">
+              <table className="w-full border-collapse border bg-white">
                 <thead>
                   <tr className="bg-gray-200">
                     <th className="border p-2">Име</th>
@@ -283,8 +317,24 @@ const AdminOrdersPage = () => {
                               <ul className="ml-4 mt-1">
                                 {(day.meals || []).map((meal, index) => (
                                   <li key={`${meal.mealName}-${index}`}>
+                                    {meal.meal_one && (
+                                      <>
+                                        {typeof meal.meal_one === "string"
+                                          ? meal.meal_one
+                                          : meal.meal_one?.mealName ||
+                                            meal.meal_one?.name ||
+                                            ""}
+                                        {" "}
+                                      </>
+                                    )}
+
                                     {meal.mealName}
-                                    {meal.quantity ? ` x${meal.quantity}` : ""}
+
+                                    {meal.quantity
+                                      ? ` x${meal.quantity}`
+                                      : ""}
+
+                                    {meal.optional ? " - optional" : ""}
                                   </li>
                                 ))}
                               </ul>
@@ -313,7 +363,9 @@ const AdminOrdersPage = () => {
 
               <div className="flex justify-center items-center gap-4 mt-6">
                 <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.max(p - 1, 1))
+                  }
                   disabled={currentPage === 1}
                   className="px-4 py-2 border border-[#478BAF] hover:bg-[#478BAF] transition-colors duration-300 hover:text-white rounded-lg disabled:opacity-50"
                 >
@@ -326,9 +378,13 @@ const AdminOrdersPage = () => {
 
                 <button
                   onClick={() =>
-                    setCurrentPage((p) => Math.min(p + 1, totalPages || 1))
+                    setCurrentPage((p) =>
+                      Math.min(p + 1, totalPages || 1),
+                    )
                   }
-                  disabled={currentPage === totalPages || totalPages === 0}
+                  disabled={
+                    currentPage === totalPages || totalPages === 0
+                  }
                   className="px-4 py-2 border border-[#478BAF] hover:bg-[#478BAF] transition-colors duration-300 hover:text-white rounded-lg disabled:opacity-50"
                 >
                   Next
