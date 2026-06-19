@@ -516,7 +516,7 @@ const AdminPage = () => {
                                     )
                                   }
                                 />
-                                <span>Optional</span>
+                                <span>Избираемо</span>
                               </label>
 
                               <Button
