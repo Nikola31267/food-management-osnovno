@@ -423,40 +423,9 @@ function buildMealRows(dayTotals) {
     a.name.localeCompare(b.name, "bg"),
   );
 
-  const summaryRows = [
-    [
-      "",
-      "",
-      "Трябвало е да поръчат",
-      String(dayTotals?.expectedPeople || 0),
-      "",
-      "",
-      "",
-    ],
-    [
-      "",
-      "",
-      "Реално поръчали",
-      String(dayTotals?.actualOrders || 0),
-      "",
-      "",
-      "",
-    ],
-    [
-      "",
-      "",
-      "Липсващи поръчки - добавени към meal.meal_one и към non-optional",
-      String(dayTotals?.missingOrders || 0),
-      "",
-      "",
-      "",
-    ],
-    ["", "", "", "", "", "", ""],
-  ];
 
   if (meals.length === 0) {
     return [
-      ...summaryRows,
       ["", "", "Няма поръчки", "0", "0", "0", "0"],
     ];
   }
@@ -471,7 +440,7 @@ function buildMealRows(dayTotals) {
     String(meal.unknown),
   ]);
 
-  return [...summaryRows, ...mealRows];
+  return [ ...mealRows];
 }
 
 function isEmptyTemplateRow(row) {
