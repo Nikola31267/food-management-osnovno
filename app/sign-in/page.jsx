@@ -34,7 +34,7 @@ export default function Login() {
         "Google login failed:",
         error.response ? error.response.data : error.message,
       );
-      setError("Google login failed. Please try again.");
+      setError(error.response ? error.response.data : error.message);
       setLoadingLogin(false); // only reset on error — on success we're navigating away
     }
   };
