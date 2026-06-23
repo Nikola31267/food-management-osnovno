@@ -139,6 +139,7 @@ export default function Dashboard() {
                   price: meal.price,
                   quantity: 1,
                   optional: Boolean(meal.optional),
+                  meal_one: Boolean(meal.meal_one),
                 },
               ],
             };
@@ -155,6 +156,7 @@ export default function Dashboard() {
               price: meal.price,
               quantity: 1,
               optional: Boolean(meal.optional),
+              meal_one: Boolean(meal.meal_one),
             },
           ],
         };
@@ -215,7 +217,8 @@ export default function Dashboard() {
           name: meal.name,
           price: meal.price,
           quantity: 1,
-          optional: false,
+          optional: Boolean(meal.optional),
+          meal_one: Boolean(meal.meal_one),
         }));
 
       const selectedOrderMeals = selectedMeals.map((meal) => ({
@@ -224,6 +227,7 @@ export default function Dashboard() {
         price: meal.price,
         quantity: meal.quantity,
         optional: Boolean(meal.optional),
+        meal_one: Boolean(meal.meal_one),
       }));
 
       const mergedMeals = [...requiredMeals, ...selectedOrderMeals];
@@ -237,6 +241,14 @@ export default function Dashboard() {
           existingMeal.quantity = Math.max(
             existingMeal.quantity,
             meal.quantity,
+          );
+
+          existingMeal.optional = Boolean(
+            existingMeal.optional || meal.optional,
+          );
+
+          existingMeal.meal_one = Boolean(
+            existingMeal.meal_one || meal.meal_one,
           );
         } else {
           acc.push(meal);
@@ -278,6 +290,7 @@ export default function Dashboard() {
             quantity: meal.quantity,
             price: meal.price,
             optional: Boolean(meal.optional),
+            meal_one: Boolean(meal.meal_one),
           })),
         }),
       );

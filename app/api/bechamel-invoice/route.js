@@ -202,94 +202,35 @@ function shouldCountUser(user) {
   return Boolean(user);
 }
 
-function getMealDisplayName(value) {
-  if (!value) return "";
-
-  if (typeof value === "string") {
-    return value.trim();
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .map(getMealDisplayName)
-      .filter(Boolean)
-      .join(" + ");
-  }
-
-  if (typeof value === "object") {
-    return String(
-      value.mealName ||
-        value.name ||
-        value.title ||
-        value.label ||
-        value.value ||
-        "",
-    ).trim();
-  }
-
-  return String(value).trim();
+function getBoolean(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
-function getMealOneName(meal) {
-  return getMealDisplayName(
-    meal.meal_one ||
-      meal.mealOne ||
-      meal.meal?.meal_one ||
-      meal.meal?.mealOne ||
-      meal.selectedMeal?.meal_one ||
-      meal.selectedMeal?.mealOne ||
-      meal.selected?.meal_one ||
-      meal.selected?.mealOne,
-  );
-}
-
-function getMainMealName(meal) {
-  return getMealDisplayName(
-    meal.mealName ||
-      meal.name ||
-      meal.title ||
-      meal.label ||
-      meal.meal?.mealName ||
-      meal.selectedMeal?.mealName,
-  );
+function getMealName(meal) {
+  return String(meal?.mealName || "").trim();
 }
 
 function getMealPiecesToCount(meal) {
-  const pieces = [];
+  const mealName = getMealName(meal);
 
-  const mealOneName = getMealOneName(meal);
-  const mealName = getMainMealName(meal);
+  if (!mealName) return [];
 
-  // meal.meal_one винаги се брои и винаги получава липсващите бройки.
-  if (mealOneName) {
-    pieces.push({
-      name: mealOneName,
-      shouldReceiveMissingOrders: true,
-    });
-  }
+  const quantity = Number(meal.quantity || 1);
+  const optional = getBoolean(meal.optional);
+  const mealOne = getBoolean(meal.meal_one);
 
-  // mealName се брои само ако НЕ е optional.
-  // И също получава липсващите бройки.
-  if (!meal.optional && mealName) {
-    pieces.push({
+  return [
+    {
       name: mealName,
-      shouldReceiveMissingOrders: true,
-    });
-  }
+      quantity,
 
-  const uniquePieces = [];
-  const seen = new Set();
-
-  for (const piece of pieces) {
-    const key = normalize(piece.name);
-
-    if (!key || seen.has(key)) continue;
-
-    seen.add(key);
-    uniquePieces.push(piece);
-  }
-
-  return uniquePieces;
+      // Главното правило:
+      // optional: true + meal_one: false => НЕ получава липсващи бройки
+      // optional: true + meal_one: true  => получава липсващи бройки
+      // optional: false                 => получава липсващи бройки
+      shouldReceiveMissingOrders: !optional || mealOne,
+    },
+  ];
 }
 
 function addMealToTotals({
@@ -311,17 +252,21 @@ function addMealToTotals({
       // Реално поръчаното количество.
       realCount: 0,
 
-      // Финалното количество във фактурата.
-      // Към него после се добавят липсващите.
+      // Финално количество във фактурата.
       count: 0,
 
       grades1to4: 0,
       grades5to7: 0,
 
-      // Тук отиват липсващите, защото не знаем от кой клас са.
+      // Липсващите бройки отиват тук,
+      // защото не знаем от кой клас са.
       unknown: 0,
 
       addedMissingOrders: 0,
+
+      // Много важно:
+      // по подразбиране е false.
+      // Става true само за ястия, които имат право да получат липсващите.
       shouldReceiveMissingOrders: false,
     };
   }
@@ -331,9 +276,7 @@ function addMealToTotals({
   totals[dayKey].meals[normalizedMealName][gradeGroup] += quantity;
 
   if (shouldReceiveMissingOrders) {
-    totals[dayKey].meals[
-      normalizedMealName
-    ].shouldReceiveMissingOrders = true;
+    totals[dayKey].meals[normalizedMealName].shouldReceiveMissingOrders = true;
   }
 }
 
@@ -372,7 +315,6 @@ async function getTotalsByDay(expectedPeopleFromQuery = null) {
         let userHasCountedOrderForThisDay = false;
 
         for (const meal of day.meals || []) {
-          const quantity = Number(meal.quantity || 1);
           const mealPieces = getMealPiecesToCount(meal);
 
           if (mealPieces.length === 0) continue;
@@ -384,9 +326,10 @@ async function getTotalsByDay(expectedPeopleFromQuery = null) {
               totals,
               dayKey,
               mealName: piece.name,
-              quantity,
+              quantity: piece.quantity,
               gradeGroup,
-              shouldReceiveMissingOrders: piece.shouldReceiveMissingOrders,
+              shouldReceiveMissingOrders:
+                piece.shouldReceiveMissingOrders,
             });
           }
         }
@@ -423,14 +366,11 @@ function buildMealRows(dayTotals) {
     a.name.localeCompare(b.name, "bg"),
   );
 
-
   if (meals.length === 0) {
-    return [
-      ["", "", "Няма поръчки", "0", "0", "0", "0"],
-    ];
+    return [["", "", "Няма поръчки", "0", "0", "0", "0"]];
   }
 
-  const mealRows = meals.map((meal) => [
+  return meals.map((meal) => [
     "",
     "",
     meal.name,
@@ -439,8 +379,6 @@ function buildMealRows(dayTotals) {
     String(meal.grades5to7),
     String(meal.unknown),
   ]);
-
-  return [ ...mealRows];
 }
 
 function isEmptyTemplateRow(row) {
