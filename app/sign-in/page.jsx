@@ -29,14 +29,14 @@ export default function Login() {
       } else {
         router.push("/grade");
       }
-    } catch (error) {
-      console.error(
-        "Google login failed:",
-        error.response ? error.response.data : error.message,
-      );
-      setError(error.response ? error.response.data : error.message);
-      setLoadingLogin(false); // only reset on error — on success we're navigating away
-    }
+  } catch (error) {
+  const errorMessage = error.response?.data?.message || error.message;
+
+  console.error("Google login failed:", errorMessage);
+  setError(errorMessage);
+
+  setLoadingLogin(false);
+}
   };
 
   const handleGoogleLoginFailure = () => {

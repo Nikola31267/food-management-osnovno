@@ -40,8 +40,9 @@ const SignInCard = ({ handleGoogleLoginSuccess, handleGoogleLoginFailure, error 
               />
             </div>
           </GoogleOAuthProvider>
-          <p className="text-red-600">{error}</p>
+ 
         </div>
+    <p className="text-red-600">{error}</p>
       </CardContent>
     </Card>
   );
