@@ -8,7 +8,7 @@ import {
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import Link from "next/link";
 
-const SignInCard = ({ handleGoogleLoginSuccess, handleGoogleLoginFailure }) => {
+const SignInCard = ({ handleGoogleLoginSuccess, handleGoogleLoginFailure, error }) => {
   return (
     <Card className="border-0 shadow-xl bg-gray-50">
       <CardHeader className="text-center pb-2">
@@ -40,6 +40,7 @@ const SignInCard = ({ handleGoogleLoginSuccess, handleGoogleLoginFailure }) => {
               />
             </div>
           </GoogleOAuthProvider>
+          <p className="text-red-600">{error}</p>
         </div>
       </CardContent>
     </Card>
